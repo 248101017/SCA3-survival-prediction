@@ -1,5 +1,7 @@
 # SCA3 Survival Prediction
 
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://sca3-survival-prediction-nafxd6esutvfhdvfpzyn92.streamlit.app/)
+
 Machine learning-based survival prediction in spinocerebellar ataxia type 3 (SCA3) using DeepSurv, random survival forest, deep Cox mixtures, and Cox proportional hazards models.
 
 ## Overview
@@ -36,14 +38,16 @@ This repository contains the source code, pre-trained model artifacts, and web-b
 
 ## Web-based clinical prediction tool
 
-The DeepSurv model is deployed as a browser-based application that accepts 10 clinical predictors and returns individualised survival probability estimates at approximately 5 and 9 years, together with a predicted survival curve and risk-group classification.
+The DeepSurv model is deployed as a Streamlit web application that accepts 10 clinical predictors and returns individualised survival probability estimates at approximately 5 and 9 years, together with a predicted survival curve and risk-group classification.
+
+### Online access (Streamlit Cloud)
+https://sca3-survival-prediction-nafxd6esutvfhdvfpzyn92.streamlit.app/
 
 ### Local deployment
-
-    git clone https://github.com/248101017/SCA3-survival-prediction.git
-    cd SCA3-survival-prediction
-    pip install -r requirements.txt
-    streamlit run app.py
+git clone https://github.com/248101017/SCA3-survival-prediction.git
+cd SCA3-survival-prediction
+pip install -r requirements.txt
+streamlit run app.py
 
 ## Reproducing the analysis pipeline
 
