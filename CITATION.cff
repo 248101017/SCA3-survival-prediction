@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+title: "SCA3 Survival Prediction"
+message: "If you use this software, please cite the associated manuscript."
+type: software
+license: MIT
+repository-code: "https://github.com/248101017/SCA3-survival-prediction"
+authors:
+  - family-names: Cui
+    given-names: Ziting
+  - family-names: Hu
+    given-names: Jian
+  - family-names: Peng
+    given-names: Rongfan
