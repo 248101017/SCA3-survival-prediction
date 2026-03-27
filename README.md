@@ -40,7 +40,7 @@ The DeepSurv model is deployed as a browser-based application that accepts 10 cl
 
 ### Local deployment
 
-    git clone https://github.com/<username>/SCA3-survival-prediction.git
+    git clone https://github.com/248101017/SCA3-survival-prediction.git
     cd SCA3-survival-prediction
     pip install -r requirements.txt
     streamlit run app.py
