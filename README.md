@@ -95,16 +95,13 @@ Two conda environments were used:
 sca3infer (web application; see requirements.txt)
 Python: (fill in from python --version)
 streamlit==1.55.0
-auton-survival==0.1.0
-scikit-learn==1.2.2
-scikit-survival==0.21.0
 numpy==1.26.4
 pandas==1.5.3
-scipy==1.15.3
 matplotlib==3.10.8
-lifelines==0.26.4
+joblib==1.5.3
+scikit-learn==1.2.2
+auton-survival==0.1.0
 torch==1.13.1
-torchvision==0.14.1
 sca3train (training/analysis; see requirements_full.txt)
 Python: (fill in from python --version)
 auton-survival==0.1.0
