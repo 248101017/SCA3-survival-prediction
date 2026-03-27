@@ -1,0 +1,8 @@
+{
+  "horizon_req_years": 5.0,
+  "grid_used_years": 4.75878048,
+  "cutoff_type": "ipcw_youden",
+  "DeepSurv_cutoff": 0.18911021498033373,
+  "RSF_cutoff": 0.2889790619765493,
+  "IPCW_YOUDEN_N_THRESHOLDS": 200
+}

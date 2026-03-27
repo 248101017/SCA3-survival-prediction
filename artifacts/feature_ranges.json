@@ -1,0 +1,52 @@
+{
+  "BMI": {
+    "min": 14.69,
+    "median": 21.54,
+    "max": 29.41
+  },
+  "disease_duration": {
+    "min": 1.0,
+    "median": 8.0,
+    "max": 32.0
+  },
+  "ATXN3_CAG_Long": {
+    "min": 63.0,
+    "median": 71.0,
+    "max": 81.0
+  },
+  "SARA_Total": {
+    "min": 3.0,
+    "median": 14.0,
+    "max": 39.0
+  },
+  "EQ_VAS": {
+    "min": 0.0,
+    "median": 50.0,
+    "max": 95.0
+  },
+  "PHQ_Depression": {
+    "min": 0.0,
+    "median": 6.0,
+    "max": 24.0
+  },
+  "GAD7_Anxiety": {
+    "min": 0.0,
+    "median": 3.0,
+    "max": 20.0
+  },
+  "INAS_Muscle_atrophy": {
+    "min": 0.0,
+    "median": 0.0,
+    "max": 1.0
+  },
+  "INAS_Fasciculations": {
+    "min": 0.0,
+    "median": 1.0,
+    "max": 1.0
+  },
+  "INAS_Sensory_symptoms": {
+    "min": 0.0,
+    "median": 0.0,
+    "max": 1.0
+  }
+}

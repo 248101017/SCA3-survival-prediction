@@ -1,0 +1,41 @@
+# Patient data — NEVER upload
+*.sav
+*.xlsx
+*.xls
+data/*.csv
+!requirements.txt
+
+# Output files (can be reproduced from code)
+outputs/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Environment
+*.env
+.conda/
+venv/
+env/
