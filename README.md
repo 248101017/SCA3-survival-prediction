@@ -120,9 +120,9 @@ R was used for LASSO–Cox feature screening:
 
 Neuroimaging analyses were performed using:
 
-- SPM12 (v7219)
-- CAT12 (v1742)
-- MATLAB (R2023b)
+- SPM12
+- CAT12
+- MATLAB (R2023a)
 
 ## Reproducing the analysis pipeline
 
