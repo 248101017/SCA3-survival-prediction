@@ -12,7 +12,7 @@ st.set_page_config(page_title=APP_TITLE, layout="centered")
 st.title(APP_TITLE)
 
 # -----------------------------
-# Debug (optional)
+# Debug: runtime python (optional)
 # -----------------------------
 with st.expander("Runtime environment (debug)", expanded=False):
     st.write(f"Python executable: `{sys.executable}`")
@@ -46,9 +46,9 @@ TRANSFORMER_PATH = os.path.join(ARTIFACT_DIR, "transformer.pkl")
 TIMES_PATH = os.path.join(ARTIFACT_DIR, "times.pkl")
 RANGES_PATH = os.path.join(ARTIFACT_DIR, "feature_ranges.json")
 
-# Optional cut-off files (training median; if present, take priority)
-CUTOFF_5Y_PATH = os.path.join(ARTIFACT_DIR, "cutoffs_train_median_req5y.json")
-CUTOFF_9Y_PATH = os.path.join(ARTIFACT_DIR, "cutoffs_train_median_req9y.json")
+# Optional cut-off files (if present)
+CUTOFF_5Y_PATH = os.path.join(ARTIFACT_DIR, "cutoffs_train_youden_req5y.json")
+CUTOFF_9Y_PATH = os.path.join(ARTIFACT_DIR, "cutoffs_train_youden_req9y.json")
 
 for p, label in [
     (MODEL_PATH, "model"),
@@ -66,7 +66,6 @@ for p, label in [
 def load_artifacts(model_path, transformer_path, times_path, ranges_path):
     model = joblib.load(model_path)
     transformer = joblib.load(transformer_path)
-
     times = np.asarray(joblib.load(times_path), dtype=float)
     times = np.sort(np.unique(times))
 
@@ -90,18 +89,18 @@ model, transformer, times, ranges = load_artifacts(
     MODEL_PATH, TRANSFORMER_PATH, TIMES_PATH, RANGES_PATH
 )
 
-# Fallback to your provided constants (DeepSurv median cutoffs)
+# 【修改点 1】：将默认的 fallback 截断值替换为你最新跑出来的 IPCW-Youden 截断值
 cut5 = _load_cutoffs(CUTOFF_5Y_PATH) or {
     "horizon_req_years": 5.0,
     "grid_used_years": 4.75878048,
-    "cutoff_type": "median",
-    "DeepSurv_cutoff": 0.07171018072329877,
+    "cutoff_type": "ipcw_youden",
+    "DeepSurv_cutoff": 0.1898,  # 从最新的 KM 图提取
 }
 cut9 = _load_cutoffs(CUTOFF_9Y_PATH) or {
     "horizon_req_years": 9.0,
     "grid_used_years": 9.3813304,
-    "cutoff_type": "median",
-    "DeepSurv_cutoff": 0.27662956232446095,
+    "cutoff_type": "ipcw_youden",
+    "DeepSurv_cutoff": 0.2912,  # 从最新的 KM 图提取
 }
 
 with st.expander("Loaded artifacts (for reproducibility)", expanded=False):
@@ -110,10 +109,11 @@ with st.expander("Loaded artifacts (for reproducibility)", expanded=False):
     st.write(f"- times: `{TIMES_PATH}`")
     st.write(f"- feature ranges: `{RANGES_PATH if os.path.exists(RANGES_PATH) else 'not found'}`")
     st.write(f"- times grid: n={len(times)}, min={times.min():.3f}, max={times.max():.3f}")
-    st.write("**Training-derived median cut-points used for risk grouping (DeepSurv):**")
+    # 【修改点 2】：UI 文本说明更新为 IPCW-Youden
+    st.write("**Training-derived IPCW-Youden cut-points used for risk grouping (DeepSurv):**")
     st.write(
-        f"- t≈5y (grid {float(cut5['grid_used_years']):.3f}y): cutoff={float(cut5['DeepSurv_cutoff']):.4f}\n"
-        f"- t≈9y (grid {float(cut9['grid_used_years']):.3f}y): cutoff={float(cut9['DeepSurv_cutoff']):.4f}"
+        f"- t≈5y (grid {cut5['grid_used_years']:.3f}y): cutoff={float(cut5['DeepSurv_cutoff']):.4f}\n"
+        f"- t≈9y (grid {cut9['grid_used_years']:.3f}y): cutoff={float(cut9['DeepSurv_cutoff']):.4f}"
     )
 
 # -----------------------------
@@ -175,6 +175,9 @@ DISPLAY_NAME_PROC = {
 def _disp(col: str) -> str:
     return DISPLAY_NAME_RAW.get(col, col)
 
+def _disp_proc(col: str) -> str:
+    return DISPLAY_NAME_PROC.get(col, col)
+
 def _hint(name: str) -> str:
     if not ranges or name not in ranges:
         return ""
@@ -228,7 +231,7 @@ if ranges:
             ood_msgs.append(f"{_disp(f)} = {v:.2f} (training range: [{mn:.2f}, {mx:.2f}])")
     if ood_msgs:
         st.warning(
-            "Out-of-distribution inputs detected — predictions may be less reliable:\n- "
+            "⚠️ Out-of-distribution inputs detected — predictions may be less reliable:\n- "
             + "\n- ".join(ood_msgs)
         )
 
@@ -336,7 +339,7 @@ if submitted:
         ax.set_ylim(0, 1.05)
         st.pyplot(fig)
 
-        # ---- Key horizons with risk groups ----
+        # ---- Key horizons ----
         st.subheader("Survival probability, risk, and risk group at key horizons")
 
         requested = []
@@ -345,16 +348,17 @@ if submitted:
         if show_9y:
             requested.append(9.0)
 
+        # Prepare rows for a compact table
         rows = []
         for t0 in requested:
             if t0 > float(times.max()):
                 rows.append(
                     {
                         "Horizon (years)": t0,
-                        "Grid used (years)": "Out of range",
-                        "Survival probability S(t)": "—",
-                        "Risk 1−S(t)": "—",
-                        "Risk group (median cut-off)": "Out of range",
+                        "Grid used (years)": np.nan,
+                        "Survival probability S(t)": np.nan,
+                        "Risk 1−S(t)": np.nan,
+                        "Risk group (IPCW-Youden cut-off)": "Out of range", # 【修改点 3】：表头更新
                     }
                 )
                 continue
@@ -364,30 +368,35 @@ if submitted:
             s_t = float(surv_curve[idx])
             risk_t = float(1.0 - s_t)
 
+            # Use the training-derived DeepSurv cutoffs (IPCW-Youden)
             if int(round(t0)) == 5:
                 cutoff = float(cut5["DeepSurv_cutoff"])
-                grid_label = float(cut5.get("grid_used_years", t_used))
             elif int(round(t0)) == 9:
                 cutoff = float(cut9["DeepSurv_cutoff"])
-                grid_label = float(cut9.get("grid_used_years", t_used))
             else:
                 cutoff = float("nan")
-                grid_label = t_used
 
             group = _risk_group(risk_t, cutoff) if np.isfinite(cutoff) else "—"
 
             rows.append(
                 {
-                    "Horizon (years)": int(round(t0)),
-                    "Grid used (years)": f"{grid_label:.3f}",
-                    "Survival probability S(t)": f"{s_t:.2%}",
-                    "Risk 1−S(t)": f"{risk_t:.2%}",
-                    "Risk group (median cut-off)": f"{group} (cut-off={cutoff:.4f})",
+                    "Horizon (years)": t0,
+                    "Grid used (years)": round(t_used, 3),
+                    "Survival probability S(t)": s_t,
+                    "Risk 1−S(t)": risk_t,
+                    "Risk group (IPCW-Youden cut-off)": f"{group} (cutoff={cutoff:.4f})", # 【修改点 4】：表头更新
                 }
             )
 
-        if rows:
-            st.dataframe(pd.DataFrame(rows), hide_index=True)
+        out_tbl = pd.DataFrame(rows)
+        if not out_tbl.empty:
+            out_tbl["Survival probability S(t)"] = out_tbl["Survival probability S(t)"].map(
+                lambda x: "—" if pd.isna(x) else f"{x:.2%}"
+            )
+            out_tbl["Risk 1−S(t)"] = out_tbl["Risk 1−S(t)"].map(
+                lambda x: "—" if pd.isna(x) else f"{x:.2%}"
+            )
+            st.dataframe(out_tbl, hide_index=True)
 
         # ---- Optional: common time point summary ----
         st.subheader("Summary table (common time points)")
@@ -400,17 +409,21 @@ if submitted:
                     {
                         "Time point (years)": t,
                         "Grid point used (years)": round(float(times[i]), 3),
-                        "Survival probability S(t)": f"{float(surv_curve[i]):.2%}",
-                        "Risk 1−S(t)": f"{float(1.0 - surv_curve[i]):.2%}",
+                        "Survival probability S(t)": float(surv_curve[i]),
+                        "Risk 1−S(t)": float(1.0 - surv_curve[i]),
                     }
                 )
         if rows2:
-            st.dataframe(pd.DataFrame(rows2), hide_index=True)
+            tbl2 = pd.DataFrame(rows2)
+            tbl2["Survival probability S(t)"] = tbl2["Survival probability S(t)"].map(lambda x: f"{x:.2%}")
+            tbl2["Risk 1−S(t)"] = tbl2["Risk 1−S(t)"].map(lambda x: f"{x:.2%}")
+            st.dataframe(tbl2, hide_index=True)
 
         st.success("Prediction complete.")
 
     except Exception as e:
         import traceback
+
         st.error(f"Prediction failed: {str(e)}")
         with st.expander("Full traceback"):
             st.code(traceback.format_exc())
@@ -418,10 +431,10 @@ if submitted:
 with st.expander("Troubleshooting (important)", expanded=False):
     st.markdown(
         """
-**If you see feature dimension mismatch**  
+**If you see feature dimension mismatch**
 Re-export artifacts from the same training run (model + transformer + times).
 
-**If deployment fails**  
-Ensure `runtime.txt` pins Python 3.10 and `requirements.txt` contains `torch` and `auton-survival`.
+**If deployment fails**
+Ensure `runtime.txt` pins Python 3.10 and `requirements.txt` contains torch and auton-survival.
 """
     )
